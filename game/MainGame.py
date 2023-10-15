@@ -26,7 +26,7 @@ class MainGame:
         self.over_image = pygame.image.load("game/images/game-over.png")
         self.restart_button = pygame.image.load("game/images/restart.png")
         self.pipes = []
-        self.game_status = 1
+        self.game_status = 1 # 0: Menu screen, 1: Playing, 2: Finished - press to restart
         self.bird_type = 2
         self.pipe_type = 0
         self.bg_type = 0
@@ -59,7 +59,8 @@ class MainGame:
         self.point = 0
         self.bird = Bird(self)
         self.white_screen = False
-        self.sound_player.swoosh_sound.play_sound()
+        self.reward = 0
+        # self.sound_player.swoosh_sound.play_sound()
 
     def paint(self):
         # self.background.render()
@@ -71,16 +72,18 @@ class MainGame:
                     pipe.move()
 
         self.update_pipes()
+
         self.base.render()
         if self.game_status < 2:
             self.base.move()
 
         self.number.draw_number(str(self.point), w / 2 - self.number.string_width(str(self.point)) / 2, 10, self.screen)
 
-        #        self.show_message()
-        self.bird.render()
-        self.check_collision()
+        # self.show_message()
+
+        reset = self.check_collision()
         self.update_point()
+        self.bird.render()
 
         if self.game_status == 2:
             if not self.white_screen:
@@ -88,6 +91,8 @@ class MainGame:
                 self.white_screen = True
 
             self.show_over_image()
+        
+        return reset
 
     def update(self, key=0):
         if key != 0:
@@ -96,9 +101,13 @@ class MainGame:
             self.key = {"ENTER": False, "UP": False, "SPACE": False}
 
         self.move()
-        self.paint()
+        reset = self.paint()
+        state, reward, done = pygame.display.get_surface(), self.reward, self.reward == -1
+        if reset:
+            self.reset_game()
+
         return self.pre_process(
-            array3d(pygame.display.get_surface()).transpose([1, 0, 2])), self.reward, self.reward == -1
+            array3d(state).transpose([1, 0, 2])), reward, done
 
     def pre_process(self, img):
         im = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_BGR2GRAY)
@@ -107,14 +116,13 @@ class MainGame:
         return torch.from_numpy(im[None, :, :].astype(np.float32))
 
     def move(self):
-#        self.reward = 0
         if self.key["ENTER"] or self.key["UP"] or self.key["SPACE"]:
             if self.game_status == 0:
                 self.game_status = 1
                 self.bird.keep_flapping = False
             elif self.game_status == 1:
                 if self.bird.y > 0:
-                    self.sound_player.wing_sound.play_sound()
+                    # self.sound_player.wing_sound.play_sound()
                     self.bird.angle = -math.pi / 8
                     self.bird.speed = -6
                     self.bird.y += self.bird.speed
@@ -129,7 +137,8 @@ class MainGame:
 
                 if pipe.speed_x > check > 0:
                     self.point += 1
-                    self.sound_player.point_sound.play_sound()
+                    self.reward += 5
+                    # self.sound_player.point_sound.play_sound()
 
     def update_pipes(self):
         if len(self.pipes) > 0:
@@ -138,10 +147,9 @@ class MainGame:
                 self.add_pipe()
 
     def check_collision(self):
- #       self.reward = 0.1
         if self.game_status == 2:
-            self.reward = -1
-            return
+            self.reward = -10
+            return True
 
         for pipe in self.pipes:
             if self.bird.x + self.bird.get_width() / 2 >= pipe.x and self.bird.x - self.bird.get_width() / 2 <= pipe.x + pipe.get_width() and (
@@ -154,19 +162,18 @@ class MainGame:
                     if self.bird.y + self.bird.get_height() / 2 - 9 >= pipe.y + pipe.space:
                         self.bird.y = -self.bird.get_height() / 2 + pipe.y + pipe.space
 
-                self.reward = -1
-                self.sound_player.hit_sound.play_sound()
-                self.reset_game()
-                self.game_status = 1
-                self.bird.speed = 8
+                self.reward = -10
+                return True
+                # self.sound_player.hit_sound.play_sound()
 
-        self.reward += .1
+        self.reward += 1
         if self.bird.y >= self.bird.drop_limit:
             if self.game_status != 2:
-                self.reward = -1
-                self.reset_game()
-                self.sound_player.hit_sound.play_sound()
-                self.game_status = 1
+                self.reward = -10
+                # self.sound_player.hit_sound.play_sound()
+                return True
+
+        return False
 
     def show_message(self):
         if self.message_alpha <= 0.0:
