@@ -48,7 +48,7 @@ class MainGame:
 
     def add_pipe(self):
         pipe = Pipe(self,
-                    (self.pipes[len(self.pipes) - 1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE + 52,
+                    (self.pipes[-1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE + 52,
                     math.floor(random.random() * 120) + h / 2 - 140)
         self.pipes.append(pipe)
 
@@ -62,73 +62,69 @@ class MainGame:
         self.reward = 0
         # self.sound_player.swoosh_sound.play_sound()
 
-    def paint(self):
-        # self.background.render()
-        self.screen.fill((0, 0, 0))
-        if self.game_status > 0:
-            for pipe in self.pipes:
-                pipe.render()
-                if self.game_status == 1:
-                    pipe.move()
-
-        self.update_pipes()
-
-        self.base.render()
-        if self.game_status < 2:
-            self.base.move()
-
-        self.number.draw_number(str(self.point), w / 2 - self.number.string_width(str(self.point)) / 2, 10, self.screen)
-
-        # self.show_message()
-
-        reset = self.check_collision()
-        self.update_point()
-        self.bird.render()
-
-        if self.game_status == 2:
-            if not self.white_screen:
-                self.screen.fill((255, 255, 255))
-                self.white_screen = True
-
-            self.show_over_image()
-        
-        return reset
-
     def update(self, key=0):
         if key != 0:
             self.key = {"ENTER": True, "UP": True, "SPACE": True}
         else:
             self.key = {"ENTER": False, "UP": False, "SPACE": False}
 
-        self.move()
-        reset = self.paint()
-        state, reward, done = pygame.display.get_surface(), self.reward, self.reward == -1
-        if reset:
+        done = self.move()
+        self.paint()
+        state, reward = pygame.display.get_surface(), self.reward
+        if done:
             self.reset_game()
 
-        return self.pre_process(
+        return self.preprocess(
             array3d(state).transpose([1, 0, 2])), reward, done
 
-    def pre_process(self, img):
-        im = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_BGR2GRAY)
-        _, im = cv2.threshold(im, 1, 255, cv2.THRESH_BINARY)
+    def preprocess(self, img):
+        im = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_RGB2GRAY)
+        # _, im = cv2.threshold(im, 1, 255, cv2.THRESH_BINARY)
 
         return torch.from_numpy(im[None, :, :].astype(np.float32))
 
     def move(self):
         if self.key["ENTER"] or self.key["UP"] or self.key["SPACE"]:
-            if self.game_status == 0:
-                self.game_status = 1
-                self.bird.keep_flapping = False
-            elif self.game_status == 1:
+            if self.game_status == 1:
                 if self.bird.y > 0:
                     # self.sound_player.wing_sound.play_sound()
                     self.bird.angle = -math.pi / 8
                     self.bird.speed = -6
                     self.bird.y += self.bird.speed
-            elif self.game_status == 2:
-                self.reset_game()
+
         self.key = {"ENTER": False, "UP": False, "SPACE": False}
+
+        if self.game_status == 1:
+            for pipe in self.pipes:
+                pipe.move()
+
+        self.update_pipes()
+
+        if self.game_status < 2:
+            self.base.move()
+
+        self.update_point()
+
+        return self.check_collision()
+
+    def paint(self):
+        # self.background.render()
+        self.screen.fill((0, 0, 0))
+        if self.game_status > 0:
+            for pipe in self.pipes:
+                pipe.render()
+
+        self.base.render()
+        self.number.draw_number(str(self.point), w / 2 - self.number.string_width(str(self.point)) / 2, 10, self.screen)
+        self.bird.render()
+
+        # if self.game_status == 2:
+        #     if not self.white_screen:
+        #         self.screen.fill((255, 255, 255))
+        #         self.white_screen = True
+
+        #     self.show_over_image()
+        
 
     def update_point(self):
         if self.game_status == 1:
@@ -143,14 +139,10 @@ class MainGame:
     def update_pipes(self):
         if len(self.pipes) > 0:
             if self.pipes[0].x < -self.pipes[0].get_width():
-                self.pipes.remove(self.pipes[0])
+                self.pipes.pop(0)
                 self.add_pipe()
 
     def check_collision(self):
-        if self.game_status == 2:
-            self.reward = -10
-            return True
-
         for pipe in self.pipes:
             if self.bird.x + self.bird.get_width() / 2 >= pipe.x and self.bird.x - self.bird.get_width() / 2 <= pipe.x + pipe.get_width() and (
                     self.bird.y - self.bird.get_height() / 2 <= pipe.y or self.bird.y + self.bird.get_height() / 2 - 9 >= pipe.y + pipe.space):

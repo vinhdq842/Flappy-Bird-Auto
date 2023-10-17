@@ -3,7 +3,6 @@ import os
 from os.path import isfile
 from random import random, randint, sample
 
-import cv2
 import numpy as np
 import pygame
 import torch
@@ -23,20 +22,13 @@ pygame.display.set_caption("Flappy Bird")
 lr = 1e-4
 gamma = 0.99
 batch_size = 64
-replay_memory_size = 50000
-init_eps = 0.1
+replay_memory_size = 20000
+init_eps = 0.8
 final_eps = 1e-4
-num_steps = 2000000
+num_steps = 5000000
 save_path = "./backup/"
 os.makedirs(save_path, exist_ok=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def preprocess(img):
-    img = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_BGR2GRAY)
-    _, img = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
-
-    return img[np.newaxis, :]
 
 
 if __name__ == "__main__":
@@ -78,11 +70,11 @@ if __name__ == "__main__":
             action = torch.argmax(prediction).item()
 
         next_state, reward, done = main_game.update(action)
-        next_state = torch.cat((state[0, 1:, :, :], next_state)).unsqueeze(0)
+        next_state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
         replay_ex.append([state, action, reward, next_state, done])
         if len(replay_ex) > replay_memory_size:
-            del replay_ex[0]
+            replay_ex.pop(0)
 
         batch = sample(replay_ex, min(len(replay_ex), batch_size))
         state_batch, action_batch, reward_batch, next_state_batch, done_batch = zip(
@@ -119,8 +111,8 @@ if __name__ == "__main__":
 
         state = next_state
         print(
-            "Iteration: {}/{}, Loss: {:.5f}, Epsilon {:.5f}, Reward: {}".format(
-                i + 1, num_steps, loss, eps, reward
+                "Iteration: {}/{}, Loss: {:.5f}, Epsilon {:.5f}, Action: {}, Reward: {}".format(
+                i + 1, num_steps, loss, eps, action, reward
             )
         )
 
