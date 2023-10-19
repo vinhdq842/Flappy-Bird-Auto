@@ -10,7 +10,7 @@ from pygame.surfarray import array3d
 from game.Background import Background
 from game.Base import Base
 from game.Bird import Bird
-from game.Constants import w, h, NUM_PIPES, HORIZONTAL_SPACE
+from game.Constants import w, h, NUM_PIPES, HORIZONTAL_SPACE, VERTICAL_SPACE
 from game.NumberDrawer import NumberDrawer
 from game.Pipe import Pipe
 from game.SoundPlayer import SoundPlayer
@@ -43,13 +43,13 @@ class MainGame:
 
     def initialize_pipe(self):
         self.pipes.clear()
-        for i in range(NUM_PIPES):
+        for _ in range(NUM_PIPES):
             self.add_pipe()
 
     def add_pipe(self):
         pipe = Pipe(self,
-                    (self.pipes[-1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE + 52,
-                    math.floor(random.random() * 120) + h / 2 - 140)
+                    (self.pipes[-1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE,
+                    math.floor(random.uniform(-1, 1) * self.bird.get_height() * 4) + h / 2 - VERTICAL_SPACE / 2 - self.base.get_height() / 2)
         self.pipes.append(pipe)
 
     def reset_game(self):

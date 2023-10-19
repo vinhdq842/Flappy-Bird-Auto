@@ -23,10 +23,13 @@ lr = 1e-4
 gamma = 0.99
 batch_size = 64
 replay_memory_size = 20000
-init_eps = 0.8
+init_eps = 0.987
 final_eps = 1e-4
+threshold = 0.9
 num_steps = 5000000
+checkpoint_interval = 5000
 save_path = "./backup/"
+
 os.makedirs(save_path, exist_ok=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -40,7 +43,7 @@ if __name__ == "__main__":
 
     replay_ex = []
     model = DeepQNetwork().to(device)
-    print(f"{sum(i.numel() for i in model.parameters()):,.3f}")
+    print(f"The model has {sum(i.numel() for i in model.parameters()):,f} params")
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     it = 0
 
@@ -65,7 +68,7 @@ if __name__ == "__main__":
 
         r = random()
         if r < eps:
-            action = randint(0, 1)
+            action = int(np.random.uniform() > threshold)
         else:
             action = torch.argmax(prediction).item()
 
@@ -116,7 +119,7 @@ if __name__ == "__main__":
             )
         )
 
-        if (i + 1) % 5000 == 0:
+        if (i + 1) % checkpoint_interval == 0:
             checkpoint = {
                 "iter": i,
                 "model_state_dict": model.state_dict(),
