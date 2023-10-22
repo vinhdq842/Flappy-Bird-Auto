@@ -49,7 +49,7 @@ class MainGame:
     def add_pipe(self):
         pipe = Pipe(self,
                     (self.pipes[-1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE,
-                    math.floor(random.uniform(-1, 1) * self.bird.get_height() * 4) + h / 2 - VERTICAL_SPACE / 2 - self.base.get_height() / 2)
+                    math.floor(random.choice([-1, 0, 1]) * self.bird.get_height() * 2) + h / 2 - VERTICAL_SPACE / 2 - self.base.get_height() / 2)
         self.pipes.append(pipe)
 
     def reset_game(self):
@@ -59,7 +59,7 @@ class MainGame:
         self.point = 0
         self.bird = Bird(self)
         self.white_screen = False
-        self.reward = 0
+        self.reward = 10
         # self.sound_player.swoosh_sound.play_sound()
 
     def update(self, key=0):
@@ -133,7 +133,7 @@ class MainGame:
 
                 if pipe.speed_x > check > 0:
                     self.point += 1
-                    self.reward += 5
+                    self.reward += 10
                     # self.sound_player.point_sound.play_sound()
 
     def update_pipes(self):
@@ -158,7 +158,7 @@ class MainGame:
                 return True
                 # self.sound_player.hit_sound.play_sound()
 
-        self.reward += 1
+        # self.reward += 1
         if self.bird.y >= self.bird.drop_limit:
             if self.game_status != 2:
                 self.reward = -10

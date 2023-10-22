@@ -4,10 +4,10 @@ import torch.nn.functional as F
 
 
 class DeepQNetwork(nn.Module):
-    def __init__(self, n_classes=2):
+    def __init__(self, n_classes=2, n_temp_frames=4):
         super().__init__()
         # input bs x 4 x 84 x 84
-        self.conv1 = nn.Conv2d(4, 32, kernel_size=(7, 7), stride=(3, 3))
+        self.conv1 = nn.Conv2d(n_temp_frames, 32, kernel_size=(7, 7), stride=(3, 3))
         # output1 bs x 32 x 26 x 26
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(5, 5), stride=(2, 2))
         # output2 bs x 64 x 11 x 11
@@ -19,9 +19,9 @@ class DeepQNetwork(nn.Module):
         self.fc2 = nn.Linear(512, 256)
         self.final = nn.Conv1d(256, n_classes, kernel_size=1)
 
-        self.bn = nn.BatchNorm2d(4)
+        self.bn = nn.BatchNorm2d(n_temp_frames)
         self.dropout1 = nn.Dropout(p=0.1)
-        self.dropout2 = nn.Dropout(p=0.5)
+        self.dropout2 = nn.Dropout(p=0.3)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -37,8 +37,8 @@ class DeepQNetwork(nn.Module):
         x = x.unsqueeze(-1)
         x = self.dropout2(torch.relu(self.inter(x)))
 
-        x = x.transpose(-1, 1).squeeze(1)
+        x = x.squeeze(-1)
         x = self.dropout1(F.gelu(self.fc2(x)))
         x = x.unsqueeze(-1)
 
-        return self.final(x).transpose(-1, 1).squeeze(1)
+        return self.final(x).squeeze(-1)
