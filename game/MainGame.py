@@ -17,17 +17,23 @@ from game.SoundPlayer import SoundPlayer
 
 
 class MainGame:
-    def __init__(self, screen, allow_sound=False):
+    def __init__(
+        self,
+        screen,
+        allow_sound=False,
+        bird_type="yellowbird",
+        pipe_type="green",
+        background_type="day",
+    ):
         self.screen = screen
         self.allow_sound = allow_sound
         self.message = pygame.image.load("game/images/message.png")
         self.over_image = pygame.image.load("game/images/game-over.png")
         self.restart_button = pygame.image.load("game/images/restart.png")
         self.pipes = []
-        self.bird_type = 2
-        self.pipe_type = 0
-        self.bg_type = 0
-        self.background = Background(self)
+        self.bird_type = bird_type
+        self.pipe_type = pipe_type
+        self.background = Background(screen, background_type)
         self.base = Base(self)
         self.number = NumberDrawer()
         self.key = {"ENTER": False, "UP": False, "SPACE": False}
@@ -37,7 +43,7 @@ class MainGame:
     def reset_game(self):
         # 0: Menu screen, 1: Playing, 2: Finished - press to restart
         self.game_status = 1
-        self.bird = Bird(self)
+        self.bird = Bird(self.screen, self.bird_type, self.base.get_height())
         self.message_alpha = 1.0
         self.point = 0
         self.white_screen = False
@@ -54,12 +60,13 @@ class MainGame:
 
     def add_pipe(self):
         pipe = Pipe(
-            self,
+            self.screen,
             (self.pipes[-1].x if len(self.pipes) > 0 else w) + HORIZONTAL_SPACE,
             math.floor(random.choice([-1, 0, 1]) * self.bird.get_height() * 2)
             + h / 2
             - VERTICAL_SPACE / 2
             - self.base.get_height() / 2,
+            self.pipe_type,
         )
         self.pipes.append(pipe)
 

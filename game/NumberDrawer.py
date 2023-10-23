@@ -3,7 +3,9 @@ import pygame
 
 class NumberDrawer:
     def __init__(self):
-        self.number_images = [pygame.image.load("game/images/{}.png".format(i)) for i in range(10)]
+        self.number_images = [
+            pygame.image.load(f"game/images/{i}.png") for i in range(10)
+        ]
 
     def draw_number(self, number, x, y, screen):
         for i in range(len(number)):

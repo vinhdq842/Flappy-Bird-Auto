@@ -21,3 +21,8 @@ training:
   save_path: "outputs"
 
 device: "cuda"
+
+game:
+  bird_type: "yellowbird" # "bluebird", "redbird", "yellowbird"
+  pipe_type: "green" # "green", "red"
+  background_type: "day" # "day", "night"

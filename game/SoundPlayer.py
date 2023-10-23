@@ -6,14 +6,23 @@ pygame.mixer.init(44100, -16, 2, 2048)
 
 class SoundPlayer:
     def __init__(self):
-        self.hit_sound, self.point_sound, self.swoosh_sound, self.wing_sound, self.die_sound = (
-            Sound(i) for i in range(0, 5))
+        (
+            self.hit_sound,
+            self.point_sound,
+            self.swoosh_sound,
+            self.wing_sound,
+            self.die_sound,
+        ) = (Sound(i) for i in range(0, 5))
 
 
 class Sound:
-    sounds = [mixer.Sound("game/sounds/hit.wav"), mixer.Sound("game/sounds/point.wav"),
-              mixer.Sound("game/sounds/swoosh.wav"),
-              mixer.Sound("game/sounds/wing.wav"), mixer.Sound("game/sounds/die.wav")]
+    sounds = [
+        mixer.Sound("game/sounds/hit.wav"),
+        mixer.Sound("game/sounds/point.wav"),
+        mixer.Sound("game/sounds/swoosh.wav"),
+        mixer.Sound("game/sounds/wing.wav"),
+        mixer.Sound("game/sounds/die.wav"),
+    ]
 
     def __init__(self, channel):
         self.channel = channel

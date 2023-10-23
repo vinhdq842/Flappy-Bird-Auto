@@ -21,7 +21,7 @@ if __name__ == "__main__":
     )
     print(f"Using device: {device}")
 
-    main_game = MainGame(screen, allow_sound=True)
+    main_game = MainGame(screen, allow_sound=True, **configs.game)
     model = DeepQNetwork(**configs.model).to(device)
 
     print(f"The model has {sum(p.numel() for p in model.parameters()):,} params.")

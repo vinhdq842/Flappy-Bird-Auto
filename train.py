@@ -33,7 +33,7 @@ if __name__ == "__main__":
     np.random.seed(configs.training.seed)
     random.seed(configs.training.seed)
 
-    main_game = MainGame(screen)
+    main_game = MainGame(screen, **configs.game)
     q_model = DeepQNetwork(**configs.model).to(device)
     t_model = DeepQNetwork(**configs.model).to(device)
 

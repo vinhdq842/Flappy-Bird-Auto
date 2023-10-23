@@ -2,18 +2,17 @@ import math
 
 import pygame
 
-from game.Constants import w, h
+from game.Constants import h, w
 
 
 class Bird:
-    def __init__(self, main_game):
-        self.main_game = main_game
-        self.screen = main_game.screen
-        self.type_of_birds = ["bluebird", "redbird", "yellowbird"]
-        self.type = main_game.bird_type
-        self.bird_images = [pygame.image.load("game/images/{}-midflap.png".format(self.type_of_birds[self.type])),
-                            pygame.image.load("game/images/{}-upflap.png".format(self.type_of_birds[self.type])),
-                            pygame.image.load("game/images/{}-downflap.png".format(self.type_of_birds[self.type]))]
+    def __init__(self, screen, bird_type, base_height):
+        self.screen = screen
+        self.bird_images = [
+            pygame.image.load(f"game/images/{bird_type}-midflap.png"),
+            pygame.image.load(f"game/images/{bird_type}-upflap.png"),
+            pygame.image.load(f"game/images/{bird_type}-downflap.png"),
+        ]
         self.x = 0
         self.y = 0
         self.reset_coordinates()
@@ -22,7 +21,7 @@ class Bird:
 
         self.g = 0.98
         self.speed = 5
-        self.drop_limit = h - self.get_height() / 2 - main_game.base.get_height()
+        self.drop_limit = h - self.get_height() / 2 - base_height
         self.angle = 0
 
     def reset_coordinates(self):
@@ -36,9 +35,14 @@ class Bird:
         return self.bird_images[0].get_height()
 
     def render(self):
-        rotated = pygame.transform.rotozoom(self.bird_images[self.frame], math.degrees(-self.angle), 1.0)
+        rotated = pygame.transform.rotozoom(
+            self.bird_images[self.frame], math.degrees(-self.angle), 1.0
+        )
         rotated.get_rect().center = (self.x, self.y)
-        self.screen.blit(rotated, (self.x - rotated.get_width() / 2, self.y - rotated.get_height() / 2))
+        self.screen.blit(
+            rotated,
+            (self.x - rotated.get_width() / 2, self.y - rotated.get_height() / 2),
+        )
         if self.keep_flapping:
             self.flap()
         else:

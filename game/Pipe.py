@@ -4,15 +4,13 @@ from game.Constants import VERTICAL_SPACE
 
 
 class Pipe:
-    def __init__(self, main_game, x, y):
-        self.main_game = main_game
-        self.type_of_pipes = ["pipe-green", "pipe-red"]
-        self.image1 = pygame.image.load("game/images/{}-down.png".format(self.type_of_pipes[main_game.pipe_type]))
-        self.image2 = pygame.image.load("game/images/{}-up.png".format(self.type_of_pipes[main_game.pipe_type]))
+    def __init__(self, screen, x, y, pipe_type):
+        self.image1 = pygame.image.load(f"game/images/pipe-{pipe_type}-down.png")
+        self.image2 = pygame.image.load(f"game/images/pipe-{pipe_type}-up.png")
         self.x, self.y = x, y
         self.speed_x = 2
         self.space = VERTICAL_SPACE
-        self.screen = main_game.screen
+        self.screen = screen
 
     def render(self):
         self.screen.blit(self.image1, (self.x, self.y - self.image1.get_height()))
