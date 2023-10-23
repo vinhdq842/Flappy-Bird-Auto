@@ -1,11 +1,16 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class DeepQNetwork(nn.Module):
-    def __init__(self, n_classes=2, n_temp_frames=4):
-        super().__init__()
+    r"""
+    Note:
+        Setting ``p_drop`` too high resulted in unstable inference.
+    """
+
+    def __init__(self, n_actions=2, n_temp_frames=4, p_drop=0.1):
+        super(DeepQNetwork, self).__init__()
         # input bs x 4 x 84 x 84
         self.conv1 = nn.Conv2d(n_temp_frames, 32, kernel_size=(7, 7), stride=(3, 3))
         # output1 bs x 32 x 26 x 26
@@ -17,11 +22,10 @@ class DeepQNetwork(nn.Module):
         self.fc1 = nn.Linear(9 * 9 * 64, 512)
         self.inter = nn.Conv1d(512, 512, kernel_size=1)
         self.fc2 = nn.Linear(512, 256)
-        self.final = nn.Conv1d(256, n_classes, kernel_size=1)
+        self.final = nn.Conv1d(256, n_actions, kernel_size=1)
 
         self.bn = nn.BatchNorm2d(n_temp_frames)
-        self.dropout1 = nn.Dropout(p=0.1)
-        self.dropout2 = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(p=p_drop)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -29,16 +33,13 @@ class DeepQNetwork(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        x = self.dropout1(torch.relu(self.conv1(self.bn(x))))
-        x = self.dropout1(torch.relu(self.conv2(x)))
-        x = self.dropout1(F.gelu(self.conv3(x)))
+        x = torch.relu(self.conv1(self.bn(x)))
+        x = torch.relu(self.conv2(x))
+        x = self.dropout(F.gelu(self.conv3(x)).view(x.size(0), -1))
 
-        x = self.dropout2(torch.relu(self.fc1(x.view(x.size(0), -1))))
-        x = x.unsqueeze(-1)
-        x = self.dropout2(torch.relu(self.inter(x)))
+        x = torch.relu(self.fc1(x)).unsqueeze(-1)
+        x = self.dropout(torch.relu(self.inter(x)).squeeze(-1))
 
-        x = x.squeeze(-1)
-        x = self.dropout1(F.gelu(self.fc2(x)))
-        x = x.unsqueeze(-1)
+        x = F.gelu(self.fc2(x)).unsqueeze(-1)
 
         return self.final(x).squeeze(-1)
