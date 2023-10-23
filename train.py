@@ -8,19 +8,20 @@ import pygame
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from game.Constants import h, w
 from game.MainGame import MainGame
 from model.DeepQNetwork import DeepQNetwork
 from utils import get_configs
 
-
 if __name__ == "__main__":
+    configs = get_configs()
+
     pygame.init()
     screen = pygame.display.set_mode((w, h))
     pygame.display.set_caption("Flappy Bird Auto - Training")
 
-    configs = get_configs()
     os.makedirs(configs.training.save_path, exist_ok=True)
 
     device = torch.device(
@@ -46,12 +47,12 @@ if __name__ == "__main__":
         with open(f"{configs.training.save_path}/checkpoint.pth", "rb") as f:
             cp = torch.load(f, map_location=device)
 
-        step = cp["step"] + 2
+        step = cp["step"] + 1
         q_model.load_state_dict(cp["q_model_state_dict"])
         t_model.load_state_dict(cp["q_model_state_dict"])
         optimizer.load_state_dict(cp["opt_state_dict"])
 
-        print(f"Checkpoint loaded at step {step-1}.")
+        print(f"Checkpoint loaded at step {step}.")
 
     exp_replay = []
     if isfile(f"{configs.training.save_path}/replay_memory.pth"):
@@ -64,7 +65,14 @@ if __name__ == "__main__":
 
     state, *_ = main_game.update()
     state = torch.cat([state for _ in range(configs.model.n_temp_frames)]).unsqueeze(0)
-    for i in range(step, configs.training.num_steps):
+    for i in (
+        p_bar := tqdm(
+            range(step, configs.training.num_steps),
+            initial=step,
+            total=configs.training.num_steps,
+            desc=f"Loss: {float('nan'):12.4f}, Epsilon: {float('nan'):8.4f}, Action: {float('nan'):2}, Reward: {float('nan'):6}",
+        )
+    ):
         # ============== Sampling ==============
         eps = (
             configs.training.final_eps
@@ -125,8 +133,8 @@ if __name__ == "__main__":
         loss.backward()
         optimizer.step()
 
-        print(
-            f"Iteration: {i+1:8}/{configs.training.num_steps:8}, Loss: {loss:12.4f}, Epsilon: {eps:8.4f}, Action: {action:2}, Reward: {reward:6}"
+        p_bar.set_description(
+            f"Loss: {loss:12.4f}, Epsilon: {eps:8.4f}, Action: {action:2}, Reward: {reward:6}"
         )
 
         if (i + 1) % configs.training.copy_interval == 0:
@@ -146,3 +154,5 @@ if __name__ == "__main__":
         if (i + 1) % configs.training.replay_interval == 0:
             with open(f"{configs.training.save_path}/replay_memory.pth", "wb") as f:
                 pickle.dump(exp_replay, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    p_bar.close()

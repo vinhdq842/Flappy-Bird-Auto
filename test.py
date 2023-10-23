@@ -10,12 +10,13 @@ from model.DeepQNetwork import DeepQNetwork
 from utils import get_configs
 
 if __name__ == "__main__":
+    configs = get_configs()
+
     pygame.init()
     screen = pygame.display.set_mode((w, h))
     pygame.display.set_caption("Flappy Bird Auto")
     fps_clock = pygame.time.Clock()
 
-    configs = get_configs()
     device = torch.device(
         "cuda" if torch.cuda.is_available() and configs.device == "cuda" else "cpu"
     )
@@ -45,11 +46,11 @@ if __name__ == "__main__":
         with torch.inference_mode():
             action = model(state.to(device))[0].argmax().item()
         next_state, reward, _ = main_game.update(action)
-        print(f"Action: {action}, Reward: {reward}")
+        print(f"\rAction: {action:2}, Reward: {reward:6}", end="", flush=True)
         state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
         pygame.display.update()
-        fps_clock.tick(30)
+        fps_clock.tick(configs.fps)
 
     pygame.quit()
     sys.exit(0)

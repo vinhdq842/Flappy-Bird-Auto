@@ -36,8 +36,14 @@ class Config:
 
 
 def get_configs():
-    parser = ArgumentParser("Flappy Bird Autio")
-    parser.add_argument("-c", "--config", type=str, default="configs/config.yaml")
+    parser = ArgumentParser("Flappy Bird Auto")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="configs/config.yaml",
+        help="path to *.yaml config file",
+    )
     args = parser.parse_args()
 
     config = yaml.safe_load(open(args.config))

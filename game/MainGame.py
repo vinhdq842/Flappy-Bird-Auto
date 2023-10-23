@@ -21,23 +21,27 @@ class MainGame:
         self,
         screen,
         allow_sound=False,
+        show_background=False,
         bird_type="yellowbird",
         pipe_type="green",
         background_type="day",
     ):
         self.screen = screen
         self.allow_sound = allow_sound
-        self.message = pygame.image.load("game/images/message.png")
-        self.over_image = pygame.image.load("game/images/game-over.png")
-        self.restart_button = pygame.image.load("game/images/restart.png")
-        self.pipes = []
+        self.show_background = show_background
         self.bird_type = bird_type
         self.pipe_type = pipe_type
         self.background = Background(screen, background_type)
         self.base = Base(self)
         self.number = NumberDrawer()
-        self.key = {"ENTER": False, "UP": False, "SPACE": False}
         self.sound_player = SoundPlayer()
+
+        self.message = pygame.image.load("game/images/message.png")
+        self.over_image = pygame.image.load("game/images/game-over.png")
+        self.restart_button = pygame.image.load("game/images/restart.png")
+
+        self.key = {"ENTER": False, "UP": False, "SPACE": False}
+        self.pipes = []
         self.reset_game()
 
     def reset_game(self):
@@ -116,8 +120,11 @@ class MainGame:
         return self.check_collision()
 
     def paint(self):
-        # self.background.render()
-        self.screen.fill((0, 0, 0))
+        if self.show_background:
+            self.background.render()
+        else:
+            self.screen.fill((0, 0, 0))
+
         if self.game_status > 0:
             for pipe in self.pipes:
                 pipe.render()
@@ -130,13 +137,6 @@ class MainGame:
             self.screen,
         )
         self.bird.render()
-
-        # if self.game_status == 2:
-        #     if not self.white_screen:
-        #         self.screen.fill((255, 255, 255))
-        #         self.white_screen = True
-
-        #     self.show_over_image()
 
     def update_point(self):
         for pipe in self.pipes:
