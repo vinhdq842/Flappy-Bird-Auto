@@ -65,6 +65,9 @@ if __name__ == "__main__":
 
     state, *_ = main_game.update()
     state = torch.cat([state for _ in range(configs.model.n_temp_frames)]).unsqueeze(0)
+    self_training_steps = int(
+        configs.training.self_training_ratio * configs.training.num_steps
+    )
     for i in (
         p_bar := tqdm(
             range(step, configs.training.num_steps),
@@ -75,10 +78,14 @@ if __name__ == "__main__":
     ):
         # ============== Sampling ==============
         eps = (
-            configs.training.final_eps
-            + (configs.training.num_steps - i)
-            * (configs.training.init_eps - configs.training.final_eps)
-            / configs.training.num_steps
+            (
+                configs.training.final_eps
+                + (configs.training.init_eps - configs.training.final_eps)
+                * (configs.training.num_steps - self_training_steps - i)
+                / (configs.training.num_steps - self_training_steps)
+            )
+            if i < configs.training.num_steps - self_training_steps
+            else 0
         )
 
         if random.random() < eps:

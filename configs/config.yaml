@@ -3,7 +3,7 @@ fps: 30
 
 model:
   n_actions: 2
-  n_temp_frames: 4
+  n_temp_frames: 5
   p_drop: 0.1
 
 training:
@@ -15,7 +15,8 @@ training:
   init_eps: 0.987
   final_eps: 0.00001
   threshold: 0.9
-  num_steps: 4000000
+  self_training_ratio: 0.1
+  num_steps: 3000000
   checkpoint_interval: 5000
   replay_interval: 20000
   log_dir: "logs"
