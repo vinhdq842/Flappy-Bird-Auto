@@ -43,8 +43,10 @@ if __name__ == "__main__":
     step = 0
     optimizer = torch.optim.Adam(q_model.parameters(), lr=configs.training.lr)
 
-    if isfile(f"{configs.training.save_path}/checkpoint.pth"):
-        with open(f"{configs.training.save_path}/checkpoint.pth", "rb") as f:
+    if isfile(f"{configs.training.save_path}/{configs.training.checkpoint_name}"):
+        with open(
+            f"{configs.training.save_path}/{configs.training.checkpoint_name}", "rb"
+        ) as f:
             cp = torch.load(f, map_location=device)
 
         step = cp["step"] + 1
@@ -149,6 +151,8 @@ if __name__ == "__main__":
 
         if (i + 1) % configs.training.log_interval == 0:
             writer.add_scalar("training_loss", loss.item(), i + 1)
+            writer.add_scalar("reward", reward, i + 1)
+            writer.add_scalar("epsilon", eps, i + 1)
 
         if (i + 1) % configs.training.checkpoint_interval == 0:
             checkpoint = {
@@ -156,7 +160,10 @@ if __name__ == "__main__":
                 "q_model_state_dict": q_model.state_dict(),
                 "opt_state_dict": optimizer.state_dict(),
             }
-            torch.save(checkpoint, f"{configs.training.save_path}/checkpoint.pth")
+            torch.save(
+                checkpoint,
+                f"{configs.training.save_path}/{configs.training.checkpoint_name}",
+            )
 
         if (i + 1) % configs.training.replay_interval == 0:
             with open(f"{configs.training.save_path}/replay_memory.pth", "wb") as f:

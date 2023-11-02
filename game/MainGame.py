@@ -21,7 +21,8 @@ class MainGame:
         self,
         screen,
         allow_sound=False,
-        show_background=False,
+        show_background=True,
+        show_point=True,
         bird_type="yellowbird",
         pipe_type="green",
         background_type="day",
@@ -29,6 +30,7 @@ class MainGame:
         self.screen = screen
         self.allow_sound = allow_sound
         self.show_background = show_background
+        self.show_point = show_point
         self.bird_type = bird_type
         self.pipe_type = pipe_type
         self.background = Background(screen, background_type)
@@ -130,12 +132,14 @@ class MainGame:
                 pipe.render()
 
         self.base.render()
-        self.number.draw_number(
-            str(self.point),
-            w / 2 - self.number.string_width(str(self.point)) / 2,
-            10,
-            self.screen,
-        )
+
+        if self.show_point:
+            self.number.draw_number(
+                str(self.point),
+                w / 2 - self.number.string_width(str(self.point)) / 2,
+                10,
+                self.screen,
+            )
         self.bird.render()
 
     def update_point(self):

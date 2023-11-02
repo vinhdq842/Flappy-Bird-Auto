@@ -28,10 +28,12 @@ if __name__ == "__main__":
     print(f"The model has {sum(p.numel() for p in model.parameters()):,} params.")
 
     assert isfile(
-        f"{configs.training.save_path}/checkpoint.pth"
+        f"{configs.training.save_path}/{configs.training.checkpoint_name}"
     ), "Please provide a checkpoint to run."
 
-    with open(f"{configs.training.save_path}/checkpoint.pth", "rb") as f:
+    with open(
+        f"{configs.training.save_path}/{configs.training.checkpoint_name}", "rb"
+    ) as f:
         cp = torch.load(f, map_location=device)
 
     model.load_state_dict(cp["q_model_state_dict"])
@@ -46,6 +48,8 @@ if __name__ == "__main__":
         with torch.inference_mode():
             action = model(state.to(device))[0].argmax().item()
         next_state, reward, _ = main_game.update(action)
+        if reward == -10:
+            break
         print(f"\rAction: {action:2}, Reward: {reward:6}", end="", flush=True)
         state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
