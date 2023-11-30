@@ -55,6 +55,7 @@ if __name__ == "__main__":
 
         pygame.display.update()
         fps_clock.tick(configs.fps)
+    print()
 
     pygame.quit()
     sys.exit(0)
