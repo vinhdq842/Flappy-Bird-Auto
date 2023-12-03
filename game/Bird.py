@@ -17,8 +17,7 @@ class Bird:
         self.y = 0
         self.reset_coordinates()
         self.frame = 0
-        self.keep_flapping = False
-
+        self.keep_flapping = True
         self.g = 0.98
         self.speed = 5
         self.drop_limit = h - self.get_height() / 2 - base_height
@@ -43,12 +42,14 @@ class Bird:
             rotated,
             (self.x - rotated.get_width() / 2, self.y - rotated.get_height() / 2),
         )
-        if self.keep_flapping:
-            self.flap()
-        else:
-            self.keep_dropping()
 
-    def keep_dropping(self):
+    def move(self):
+        if self.keep_flapping:
+            self._flap()
+        else:
+            self._keep_dropping()
+
+    def _keep_dropping(self):
         if self.speed > 0.0:
             self.frame = 0
 
@@ -64,9 +65,9 @@ class Bird:
                     self.angle = math.pi / 2
 
         if self.speed <= 0:
-            self.flap()
+            self._flap()
 
-    def flap(self):
+    def _flap(self):
         self.frame += 1
         if self.frame > 2:
             self.frame = 0

@@ -29,7 +29,7 @@ class Sound:
         self.sound = mixer.Channel(channel)
         self.sound.set_volume(0.2)
 
-    def play_sound(self, loop=False):
+    def play(self, loop=False):
         if loop:
             self.sound.play(Sound.sounds[self.channel], -1)
         else:
@@ -38,11 +38,11 @@ class Sound:
     def is_playing(self):
         return self.sound.get_busy()
 
-    def stop_sound(self):
+    def stop(self):
         self.sound.stop()
 
-    def pause_sound(self):
+    def pause(self):
         self.sound.pause()
 
-    def unpause_sound(self):
+    def unpause(self):
         self.sound.unpause()
