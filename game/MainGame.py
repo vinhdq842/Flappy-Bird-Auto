@@ -48,6 +48,7 @@ class MainGame:
         # 0: Menu screen, 1: Playing, 2: Finished - press to restart
         self.game_status = 1
         self.bird = Bird(self.screen, self.bird_type, self.base.get_height())
+        self.bird.keep_flapping = False
         self.startup_message_alpha = 0.0
         self.point = 0
         self.white_screen = False
