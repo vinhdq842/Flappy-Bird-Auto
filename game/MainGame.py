@@ -33,16 +33,14 @@ class MainGame:
         self.show_point = show_point
         self.bird_type = bird_type
         self.pipe_type = pipe_type
-        self.background = Background(screen, background_type)
-        self.base = Base(self)
-        self.number = NumberDrawer()
-        self.sound_player = SoundPlayer()
-
-        self.message = pygame.image.load("game/images/message.png")
+        self.startup_message = pygame.image.load("game/images/startup.png")
         self.over_image = pygame.image.load("game/images/game-over.png")
         self.restart_button = pygame.image.load("game/images/restart.png")
 
-        self.key = {"ENTER": False, "UP": False, "SPACE": False}
+        self.background = Background(screen, background_type)
+        self.base = Base(screen)
+        self.number = NumberDrawer()
+        self.sound_player = SoundPlayer()
         self.pipes = []
         self.reset_game()
 
@@ -50,14 +48,15 @@ class MainGame:
         # 0: Menu screen, 1: Playing, 2: Finished - press to restart
         self.game_status = 1
         self.bird = Bird(self.screen, self.bird_type, self.base.get_height())
-        self.message_alpha = 1.0
+        self.bird.keep_flapping = False
+        self.startup_message_alpha = 0.0
         self.point = 0
         self.white_screen = False
         self.reward = 0
         self.initialize_pipe()
 
         if self.allow_sound:
-            self.sound_player.swoosh_sound.play_sound()
+            self.sound_player.swoosh_sound.play()
 
     def initialize_pipe(self):
         self.pipes.clear()
@@ -77,48 +76,52 @@ class MainGame:
         self.pipes.append(pipe)
 
     def update(self, key=0):
-        if key != 0:
-            self.key = {"ENTER": True, "UP": True, "SPACE": True}
-        else:
-            self.key = {"ENTER": False, "UP": False, "SPACE": False}
-
-        done = self.move()
+        key = {"ENTER": key == 1, "UP": key == 1, "SPACE": key == 1}
+        done = self.move(key)
         self.paint()
-        state, reward = pygame.display.get_surface(), self.reward
+        state, reward = (
+            self._preprocess(
+                array3d(pygame.display.get_surface()).transpose([1, 0, 2])
+            ),
+            self.reward,
+        )
+
         if done:
             self.reset_game()
 
-        return self.preprocess(array3d(state).transpose([1, 0, 2])), reward, done
+        return state, reward, done
 
-    def preprocess(self, img):
+    def _preprocess(self, img):
         im = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_RGB2GRAY)
         return torch.from_numpy(im[np.newaxis, :, :].astype(np.float32))
 
-    def move(self):
-        if self.key["ENTER"] or self.key["UP"] or self.key["SPACE"]:
-            if self.game_status == 1:
-                if self.bird.y > 0:
+    def move(self, key):
+        if key["ENTER"] or key["UP"] or key["SPACE"]:
+            if self.game_status == 0:
+                self.game_status = 1
+                self.bird.keep_flapping = False
+            elif self.game_status == 1:
+                if self.bird.y > -self.bird.get_height():
                     self.bird.angle = -math.pi / 8
                     self.bird.speed = -6
                     self.bird.y += self.bird.speed
 
                     if self.allow_sound:
-                        self.sound_player.wing_sound.play_sound()
-
-        self.key = {"ENTER": False, "UP": False, "SPACE": False}
+                        self.sound_player.wing_sound.play()
+            elif self.game_status == 2 and key["ENTER"]:
+                self.reset_game()
+                return
+        self.bird.move()
 
         if self.game_status == 1:
             for pipe in self.pipes:
                 pipe.move()
-
         self.update_pipes()
 
         if self.game_status < 2:
-            self.base.move()
+            self.base.move(self.game_status)
 
-        if self.game_status == 1:
-            self.update_point()
-
+        self.update_point()
         return self.check_collision()
 
     def paint(self):
@@ -127,30 +130,37 @@ class MainGame:
         else:
             self.screen.fill((0, 0, 0))
 
-        if self.game_status > 0:
-            for pipe in self.pipes:
-                pipe.render()
+        for pipe in self.pipes:
+            pipe.render()
 
         self.base.render()
 
         if self.show_point:
-            self.number.draw_number(
+            self.number.draw(
                 str(self.point),
                 w / 2 - self.number.string_width(str(self.point)) / 2,
                 10,
                 self.screen,
             )
+
+        self.show_message()
         self.bird.render()
 
-    def update_point(self):
-        for pipe in self.pipes:
-            check = self.bird.x + self.bird.get_width() / 2 - pipe.x
+        if self.game_status == 2:
+            if not self.white_screen:
+                self.screen.fill((255, 255, 255))
+                self.white_screen = True
 
-            if pipe.speed_x > check > 0:
-                self.point += 1
-                self.reward += 10
-                if self.allow_sound:
-                    self.sound_player.point_sound.play_sound()
+            self.show_over_image()
+
+    def update_point(self):
+        if self.game_status == 1:
+            for pipe in self.pipes:
+                if pipe.speed_x > self.bird.x + self.bird.get_width() / 2 - pipe.x > 0:
+                    self.point += 1
+                    self.reward += 10
+                    if self.allow_sound:
+                        self.sound_player.point_sound.play()
 
     def update_pipes(self):
         if len(self.pipes) > 0:
@@ -159,15 +169,16 @@ class MainGame:
                 self.add_pipe()
 
     def check_collision(self):
+        if self.game_status == 2:
+            return
+
         for pipe in self.pipes:
             if (
                 self.bird.x + self.bird.get_width() / 2 >= pipe.x
                 and self.bird.x - self.bird.get_width() / 2 <= pipe.x + pipe.get_width()
-                and (
-                    self.bird.y - self.bird.get_height() / 2 <= pipe.y
-                    or self.bird.y + self.bird.get_height() / 2 - 9
-                    >= pipe.y + pipe.space
-                )
+            ) and (
+                self.bird.y - self.bird.get_height() / 2 <= pipe.y
+                or self.bird.y + self.bird.get_height() / 2 - 9 >= pipe.y + pipe.space
             ):
                 if (
                     pipe.x - self.bird.get_width() / 2 + 2
@@ -185,37 +196,38 @@ class MainGame:
 
                 self.reward = -10
                 if self.allow_sound:
-                    self.sound_player.hit_sound.play_sound()
+                    self.sound_player.hit_sound.play()
                 return True
 
         if self.bird.y >= self.bird.drop_limit:
-            if self.game_status != 2:
-                self.reward = -10
-                if self.allow_sound:
-                    self.sound_player.hit_sound.play_sound()
-                return True
+            self.reward = -10
+            if self.allow_sound:
+                self.sound_player.hit_sound.play()
+            return True
 
         return False
 
     def show_message(self):
-        if self.message_alpha <= 0.0:
+        if self.startup_message_alpha <= 0.0:
             return
 
-        if self.message_alpha > 0.0 and self.game_status == 1:
-            self.message_alpha -= (
-                0.05 if self.message_alpha > 0.05 else self.message_alpha
+        if self.startup_message_alpha > 0.0 and self.game_status == 1:
+            self.startup_message_alpha -= (
+                0.05
+                if self.startup_message_alpha > 0.05
+                else self.startup_message_alpha
             )
 
         tmp = pygame.Surface((w, h)).convert()
         tmp.blit(self.screen, (0, 0))
         tmp.blit(
-            self.message,
+            self.startup_message,
             (
-                w / 2 - self.message.get_width() / 2,
-                h / 2 - self.message.get_height() / 2,
+                w / 2 - self.startup_message.get_width() / 2,
+                h / 2 - self.startup_message.get_height() / 2,
             ),
         )
-        tmp.set_alpha(int(self.message_alpha * 255))
+        tmp.set_alpha(int(self.startup_message_alpha * 255))
         self.screen.blit(tmp, (0, 0))
 
     def show_over_image(self):
