@@ -28,11 +28,12 @@ if __name__ == "__main__":
     print(f"The model has {sum(p.numel() for p in model.parameters()):,} params.")
 
     assert isfile(
-        f"{configs.training.save_path}/{configs.training.checkpoint_name}"
-    ), "Please provide a checkpoint to run."
+        f"{configs.training.save_dir}/{configs.training.checkpoint_name}/{configs.test.best_checkpoint}.pth"
+    ), "Please provide a best_checkpoint to run."
 
     with open(
-        f"{configs.training.save_path}/{configs.training.checkpoint_name}", "rb"
+        f"{configs.training.save_dir}/{configs.training.checkpoint_name}/{configs.test.best_checkpoint}.pth",
+        "rb",
     ) as f:
         cp = torch.load(f, map_location=device)
 

@@ -1,6 +1,7 @@
 import os
 import pickle
 import random
+from glob import glob
 from os.path import isfile
 
 import numpy as np
@@ -22,13 +23,17 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((w, h))
     pygame.display.set_caption("Flappy Bird Auto - Training")
 
-    os.makedirs(configs.training.save_path, exist_ok=True)
+    os.makedirs(
+        f"{configs.training.save_dir}/{configs.training.checkpoint_name}", exist_ok=True
+    )
 
     device = torch.device(
         "cuda" if torch.cuda.is_available() and configs.device == "cuda" else "cpu"
     )
     print(f"Using device: {device}")
-    writer = SummaryWriter(configs.training.log_dir)
+    writer = SummaryWriter(
+        f"{configs.training.log_dir}/{configs.training.checkpoint_name}"
+    )
 
     torch.manual_seed(configs.training.seed)
     np.random.seed(configs.training.seed)
@@ -43,10 +48,15 @@ if __name__ == "__main__":
     step = 0
     optimizer = torch.optim.Adam(q_model.parameters(), lr=configs.training.lr)
 
-    if isfile(f"{configs.training.save_path}/{configs.training.checkpoint_name}"):
-        with open(
-            f"{configs.training.save_path}/{configs.training.checkpoint_name}", "rb"
-        ) as f:
+    checkpoint_list = sorted(
+        glob(
+            f"{configs.training.save_dir}/{configs.training.checkpoint_name}/{configs.training.checkpoint_name}*.pth"
+        )
+    )
+    latest_checkpoint = checkpoint_list[-1] if len(checkpoint_list) else None
+
+    if latest_checkpoint and isfile(latest_checkpoint):
+        with open(latest_checkpoint, "rb") as f:
             cp = torch.load(f, map_location=device)
 
         step = cp["step"] + 1
@@ -57,8 +67,13 @@ if __name__ == "__main__":
         print(f"Checkpoint loaded at step {step}.")
 
     exp_replay = []
-    if isfile(f"{configs.training.save_path}/replay_memory.pth"):
-        with open(f"{configs.training.save_path}/replay_memory.pth", "rb") as f:
+    if isfile(
+        f"{configs.training.save_dir}/{configs.training.checkpoint_name}/replay_memory.pth"
+    ):
+        with open(
+            f"{configs.training.save_dir}/{configs.training.checkpoint_name}/replay_memory.pth",
+            "rb",
+        ) as f:
             exp_replay = pickle.load(f)
 
     q_model.train()
@@ -162,11 +177,14 @@ if __name__ == "__main__":
             }
             torch.save(
                 checkpoint,
-                f"{configs.training.save_path}/{configs.training.checkpoint_name}",
+                f"{configs.training.save_dir}/{configs.training.checkpoint_name}/{configs.training.checkpoint_name}-{i+1:010d}.pth",
             )
 
         if (i + 1) % configs.training.replay_interval == 0:
-            with open(f"{configs.training.save_path}/replay_memory.pth", "wb") as f:
+            with open(
+                f"{configs.training.save_dir}/{configs.training.checkpoint_name}/replay_memory.pth",
+                "wb",
+            ) as f:
                 pickle.dump(exp_replay, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     p_bar.close()
