@@ -27,7 +27,7 @@ if __name__ == "__main__":
         f"{configs.training.log_dir}/{configs.training.checkpoint_name}/val"
     )
 
-    main_game = MainGame(screen, allow_sound=True, **configs.game)
+    main_game = MainGame(screen, **configs.game)
     model = DeepQNetwork(**configs.model).to(device)
 
     print(f"The model has {sum(p.numel() for p in model.parameters()):,} params.")

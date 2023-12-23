@@ -3,3 +3,4 @@ env/
 backup/
 logs/
 *.pth
+draft.ipynb
