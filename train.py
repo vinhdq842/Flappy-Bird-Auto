@@ -38,6 +38,10 @@ if __name__ == "__main__":
     torch.manual_seed(configs.training.seed)
     np.random.seed(configs.training.seed)
     random.seed(configs.training.seed)
+    # for CNNs
+    torch.backends.cudnn.benchmark = False
+    # torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.deterministic = True
 
     main_game = MainGame(screen, **configs.game)
     q_model = DeepQNetwork(**configs.model).to(device)
