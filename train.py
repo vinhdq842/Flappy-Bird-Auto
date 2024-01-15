@@ -84,7 +84,7 @@ if __name__ == "__main__":
     t_model.eval()
     loss_fn = nn.MSELoss()
 
-    state, *_ = main_game.update()
+    _, state, *_ = main_game.update()
     state = torch.cat([state for _ in range(configs.model.n_temp_frames)]).unsqueeze(0)
     self_training_steps = int(
         configs.training.self_training_ratio * configs.training.num_steps
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             range(step, configs.training.num_steps),
             initial=step,
             total=configs.training.num_steps,
-            desc=f"Loss: {float('nan'):12.4f}, Epsilon: {float('nan'):8.4f}, Action: {float('nan'):2}, Reward: {float('nan'):6}",
+            desc=f"Loss: {float('nan'):12.4f}, Epsilon: {float('nan'):8.4f}, Action: {float('nan'):2}, Reward: {float('nan'):6}, Point: {float('nan'):6}",
         )
     ):
         # ============== Sampling ==============
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             with torch.inference_mode():
                 action = torch.argmax(q_model(state.to(device))[0]).item()
 
-        next_state, reward, done = main_game.update(action)
+        point, next_state, reward, done = main_game.update(action)
         next_state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
         exp_replay.append([state, action, reward, next_state, done])
@@ -162,7 +162,7 @@ if __name__ == "__main__":
         optimizer.step()
 
         p_bar.set_description(
-            f"Loss: {loss:12.4f}, Epsilon: {eps:8.4f}, Action: {action:2}, Reward: {reward:6}"
+            f"Loss: {loss:12.4f}, Epsilon: {eps:8.4f}, Action: {action:2}, Reward: {reward:6}, Point: {point:6}"
         )
 
         if (i + 1) % configs.training.copy_interval == 0:
@@ -172,6 +172,7 @@ if __name__ == "__main__":
             writer.add_scalar("training_loss", loss.item(), i + 1)
             writer.add_scalar("reward", reward, i + 1)
             writer.add_scalar("epsilon", eps, i + 1)
+            writer.add_scalar("point", point, i + 1)
 
         if (i + 1) % configs.training.checkpoint_interval == 0:
             checkpoint = {

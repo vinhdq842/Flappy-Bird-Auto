@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     print(f"The model has {sum(p.numel() for p in model.parameters()):,} params.")
 
-    max_reward = 0
+    max_point = 0
     best_checkpoint = None
     checkpoint_list = sorted(
         glob(
@@ -51,8 +51,8 @@ if __name__ == "__main__":
         print(f"Checkpoint loaded at step {cp['step'] + 1}.")
 
         model.eval()
-        last_reward = 0
-        state, *_ = main_game.update()
+        last_point = 0
+        point, state, *_ = main_game.update()
         state = torch.cat(
             [state for _ in range(configs.model.n_temp_frames)]
         ).unsqueeze(0)
@@ -60,25 +60,24 @@ if __name__ == "__main__":
         while not any([event.type == pygame.QUIT for event in pygame.event.get()]):
             with torch.inference_mode():
                 action = model(state.to(device))[0].argmax().item()
-            next_state, reward, _ = main_game.update(action)
+            point, next_state, reward, _ = main_game.update(action)
 
-            if reward > max_reward:
-                max_reward = reward
+            if point > max_point:
+                max_point = point
                 best_checkpoint = checkpoint
 
-            if reward == -10:
-                writer.add_scalar("max_reward", last_reward, cp["step"] + 1)
+            if reward == -1:
+                writer.add_scalar("max_point", last_point, cp["step"] + 1)
                 break
             else:
-                last_reward = reward
+                last_point = point
 
-            print(f"\rAction: {action:2}, Reward: {reward:6}", end="", flush=True)
+            print(f"\rAction: {action:2}, Point: {point:6}", end="", flush=True)
             state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
             pygame.display.update()
-            fps_clock.tick(configs.fps)
         print()
 
-    print(f"Best checkpoint: {best_checkpoint}, Reward: {max_reward}")
+    print(f"Best checkpoint: {best_checkpoint}, Point: {max_point}")
     pygame.quit()
     sys.exit(0)

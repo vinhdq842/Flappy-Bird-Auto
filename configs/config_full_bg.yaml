@@ -1,0 +1,36 @@
+device: "cuda"
+fps: 60
+
+model:
+  n_actions: 2
+  n_temp_frames: 5
+  p_drop: 0.01
+
+training:
+  seed: 42
+  lr: 0.00001
+  gamma: 0.99
+  batch_size: 64
+  replay_memory_size: 30000
+  init_eps: 0.987
+  final_eps: 0.00001
+  threshold: 0.9
+  self_training_ratio: 0.0
+  num_steps: 2000000
+  checkpoint_interval: 5000
+  replay_interval: 30000
+  log_dir: "logs"
+  log_interval: 200
+  copy_interval: 5000
+  save_dir: "outputs"
+  checkpoint_name: "full-bg"
+
+test:
+  best_checkpoint: "full-bg-0001540000"
+
+game:
+  bird_type: "yellowbird" # "bluebird", "redbird", "yellowbird"
+  pipe_type: "green" # "green", "red"
+  background_type: "day" # "day", "night"
+  show_background: True
+  show_point: True

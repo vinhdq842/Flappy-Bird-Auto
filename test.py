@@ -42,16 +42,16 @@ if __name__ == "__main__":
 
     model.eval()
 
-    state, *_ = main_game.update()
+    _, state, *_ = main_game.update()
     state = torch.cat([state for _ in range(configs.model.n_temp_frames)]).unsqueeze(0)
 
     while not any([event.type == pygame.QUIT for event in pygame.event.get()]):
         with torch.inference_mode():
             action = model(state.to(device))[0].argmax().item()
-        next_state, reward, _ = main_game.update(action)
-        if reward == -10:
+        point, next_state, reward, _ = main_game.update(action)
+        if reward == -1:
             break
-        print(f"\rAction: {action:2}, Reward: {reward:6}", end="", flush=True)
+        print(f"\rAction: {action:2}, Point: {point:6}", end="", flush=True)
         state = torch.cat((state[:, 1:, :, :], next_state.unsqueeze(0)), dim=1)
 
         pygame.display.update()

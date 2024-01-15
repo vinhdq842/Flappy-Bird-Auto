@@ -79,17 +79,18 @@ class MainGame:
         key = {"ENTER": key == 1, "UP": key == 1, "SPACE": key == 1}
         done = self.move(key)
         self.paint()
-        state, reward = (
+        state, reward, point = (
             self._preprocess(
                 array3d(pygame.display.get_surface()).transpose([1, 0, 2])
             ),
             self.reward,
+            self.point,
         )
 
         if done:
             self.reset_game()
 
-        return state, reward, done
+        return point, state, reward, done
 
     def _preprocess(self, img):
         im = cv2.cvtColor(cv2.resize(img, (84, 84)), cv2.COLOR_RGB2GRAY)
@@ -158,7 +159,7 @@ class MainGame:
             for pipe in self.pipes:
                 if pipe.speed_x > self.bird.x + self.bird.get_width() / 2 - pipe.x > 0:
                     self.point += 1
-                    self.reward += 10
+                    self.reward += 1
                     if self.allow_sound:
                         self.sound_player.point_sound.play()
 
@@ -194,13 +195,13 @@ class MainGame:
                     ):
                         self.bird.y = -self.bird.get_height() / 2 + pipe.y + pipe.space
 
-                self.reward = -10
+                self.reward = -1
                 if self.allow_sound:
                     self.sound_player.hit_sound.play()
                 return True
 
         if self.bird.y >= self.bird.drop_limit:
-            self.reward = -10
+            self.reward = -1
             if self.allow_sound:
                 self.sound_player.hit_sound.play()
             return True
