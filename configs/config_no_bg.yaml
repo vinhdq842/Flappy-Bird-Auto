@@ -1,5 +1,5 @@
 device: "cuda"
-fps: 120
+fps: 60
 
 model:
   n_actions: 2
@@ -26,7 +26,7 @@ training:
   checkpoint_name: "no-bg"
 
 test:
-  best_checkpoint: "no-bg-0000340000"
+  best_checkpoint: "no-bg-0000320000"
 
 game:
   bird_type: "yellowbird" # "bluebird", "redbird", "yellowbird"
