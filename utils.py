@@ -1,38 +1,60 @@
 from argparse import ArgumentParser
+from dataclasses import dataclass
 
 import yaml
+from simple_parsing.helpers import Serializable
 
 
-class Config:
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if isinstance(v, dict):
-                v = Config(**v)
-            self[k] = v
+@dataclass
+class ModelArgs(Serializable):
+    n_actions: int
+    n_temp_frames: int
+    p_drop: float
 
-    def keys(self):
-        return self.__dict__.keys()
 
-    def values(self):
-        return self.__dict__.values()
+@dataclass
+class TrainingArgs(Serializable):
+    seed: int
+    lr: float
+    gamma: float
+    batch_size: int
+    replay_memory_size: int
+    init_eps: float
+    final_eps: float
+    threshold: float
+    self_training_ratio: float
+    num_steps: int
+    checkpoint_interval: int
+    replay_interval: int
+    log_dir: str
+    log_interval: int
+    copy_interval: int
+    save_dir: str
+    checkpoint_name: str
 
-    def items(self):
-        return self.__dict__.items()
 
-    def __len__(self):
-        return len(self.__dict__)
+@dataclass
+class TestArgs(Serializable):
+    best_checkpoint: str
 
-    def __getitem__(self, k):
-        return getattr(self, k)
 
-    def __setitem__(self, k, v):
-        setattr(self, k, v)
+@dataclass
+class GameArgs(Serializable):
+    bird_type: str
+    pipe_type: str
+    background_type: str
+    show_background: bool
+    show_point: bool
 
-    def __contains__(self, k):
-        return k in self.__dict__
 
-    def __repr__(self):
-        return self.__dict__.__repr__()
+@dataclass
+class Configs(Serializable):
+    device: str
+    fps: int
+    model: ModelArgs
+    training: TrainingArgs
+    test: TestArgs
+    game: GameArgs
 
 
 def get_configs():
@@ -48,4 +70,4 @@ def get_configs():
 
     config = yaml.safe_load(open(args.config))
 
-    return Config(**config)
+    return Configs.from_dict(config)

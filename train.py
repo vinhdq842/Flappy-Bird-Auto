@@ -43,9 +43,9 @@ if __name__ == "__main__":
     # torch.use_deterministic_algorithms(True)
     torch.backends.cudnn.deterministic = True
 
-    main_game = MainGame(screen, **configs.game)
-    q_model = DeepQNetwork(**configs.model).to(device)
-    t_model = DeepQNetwork(**configs.model).to(device)
+    main_game = MainGame(screen, **configs.game.to_dict())
+    q_model = DeepQNetwork(**configs.model.to_dict()).to(device)
+    t_model = DeepQNetwork(**configs.model.to_dict()).to(device)
 
     print(f"The model has {sum(p.numel() for p in q_model.parameters()):,} params.")
 
