@@ -11,10 +11,10 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+from configs import get_configs
 from game.Constants import h, w
 from game.MainGame import MainGame
 from model.DeepQNetwork import DeepQNetwork
-from utils import get_configs
 
 if __name__ == "__main__":
     configs = get_configs()
